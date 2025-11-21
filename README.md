@@ -44,6 +44,12 @@ A Flutter application that monitors battery levels at scheduled times and forwar
 
 ```bash
 flutter pub get
+
+# Generate required code files
+flutter pub run build_runner build --delete-conflicting-outputs
+# Or use the provided script:
+# ./generate.sh
+
 flutter run
 ```
 

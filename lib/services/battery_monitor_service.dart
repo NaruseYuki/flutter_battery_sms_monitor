@@ -111,6 +111,8 @@ class BatteryMonitorService {
       
       await api.postMessage(message);
     } catch (e) {
+      // Log error - in production, consider using a proper logging framework
+      // ignore: avoid_print
       print('Failed to send battery alert: $e');
     }
   }

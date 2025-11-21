@@ -21,6 +21,7 @@ class SmsMonitorService {
     final webhookUrl = prefs.getString(_keySlackWebhookUrl);
     
     if (webhookUrl == null || webhookUrl.isEmpty) {
+      // ignore: avoid_print
       print('Slack webhook URL not configured');
       return;
     }
@@ -44,6 +45,8 @@ Message: ${message.body ?? '(empty)'}
       final slackMessage = SlackMessage(text: text);
       await api.postMessage(slackMessage);
     } catch (e) {
+      // Log error - in production, consider using a proper logging framework
+      // ignore: avoid_print
       print('Failed to send SMS to Slack: $e');
     }
   }
