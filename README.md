@@ -71,7 +71,7 @@ The app will request:
 
 ### Battery Monitoring
 - The app will check battery level at the configured time daily
-- If battery level ≤ threshold, an alert is sent to Slack
+- If battery level < threshold, an alert is sent to Slack
 - Alert format: "⚠️ Battery Alert: Battery level is low at XX%"
 
 ### SMS Monitoring

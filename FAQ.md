@@ -40,7 +40,7 @@
 ## Usage
 
 ### Q: When will battery alerts be sent?
-**A:** Battery alerts are sent once per day at the time you configure, but ONLY if the battery level is at or below your threshold.
+**A:** Battery alerts are sent once per day at the time you configure, but ONLY if the battery level is below your threshold (not equal to).
 
 ### Q: Will SMS forwarding work immediately?
 **A:** Yes, once you save the settings and grant SMS permissions, any new incoming SMS will be forwarded to Slack immediately.

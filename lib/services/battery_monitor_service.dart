@@ -8,7 +8,7 @@ class BatteryMonitorService {
   static const String _keyMonitorTime = 'monitor_time';
   static const String _keyBatteryThreshold = 'battery_threshold';
   static const String _keySlackWebhookUrl = 'slack_webhook_url';
-  static const String _keyAlarmId = 'alarm_id';
+  static const int _batteryAlarmId = 0;
   
   final Battery _battery = Battery();
   
@@ -63,12 +63,12 @@ class BatteryMonitorService {
     }
     
     // Cancel any existing alarm
-    await AndroidAlarmManager.cancel(0);
+    await AndroidAlarmManager.cancel(_batteryAlarmId);
     
     // Schedule the alarm
     await AndroidAlarmManager.periodic(
       const Duration(days: 1),
-      0,
+      _batteryAlarmId,
       batteryCheckCallback,
       startAt: scheduledTime,
       exact: true,
@@ -79,7 +79,7 @@ class BatteryMonitorService {
   
   // Cancel battery monitoring
   Future<void> cancelBatteryCheck() async {
-    await AndroidAlarmManager.cancel(0);
+    await AndroidAlarmManager.cancel(_batteryAlarmId);
   }
   
   // Check battery level and send alert if needed
@@ -94,7 +94,7 @@ class BatteryMonitorService {
     final threshold = settings['batteryThreshold'] as int;
     final webhookUrl = settings['slackWebhookUrl'] as String;
     
-    if (batteryLevel <= threshold) {
+    if (batteryLevel < threshold) {
       await service._sendBatteryAlert(batteryLevel, webhookUrl);
     }
   }

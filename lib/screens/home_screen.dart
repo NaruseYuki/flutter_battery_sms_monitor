@@ -65,11 +65,21 @@ class _HomeScreenState extends State<HomeScreen> {
       return;
     }
     
-    // Validate time format (HH:MM)
-    final timeRegex = RegExp(r'^\d{2}:\d{2}$');
-    if (!timeRegex.hasMatch(time)) {
+    // Validate time format (HH:MM) and values
+    final timeRegex = RegExp(r'^(\d{2}):(\d{2})$');
+    final match = timeRegex.firstMatch(time);
+    if (match == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Time format should be HH:MM')),
+      );
+      return;
+    }
+    
+    final hour = int.parse(match.group(1)!);
+    final minute = int.parse(match.group(2)!);
+    if (hour < 0 || hour > 23 || minute < 0 || minute > 59) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Invalid time. Hours: 00-23, Minutes: 00-59')),
       );
       return;
     }
@@ -96,6 +106,7 @@ class _HomeScreenState extends State<HomeScreen> {
   
   Future<void> _stopMonitoring() async {
     await _batteryService.cancelBatteryCheck();
+    _smsService.stopSmsMonitoring();
     setState(() {
       _isMonitoring = false;
     });
@@ -256,7 +267,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                     SizedBox(height: 8),
                     Text('• Battery level will be checked at the specified time daily'),
-                    Text('• Alert will be sent if battery level is below threshold'),
+                    Text('• Alert will be sent if battery level is below the threshold'),
                     Text('• SMS messages will be automatically forwarded to Slack'),
                     Text('• Make sure to grant SMS and alarm permissions'),
                   ],
@@ -271,6 +282,7 @@ class _HomeScreenState extends State<HomeScreen> {
   
   @override
   void dispose() {
+    _smsService.stopSmsMonitoring();
     _webhookController.dispose();
     _timeController.dispose();
     _thresholdController.dispose();

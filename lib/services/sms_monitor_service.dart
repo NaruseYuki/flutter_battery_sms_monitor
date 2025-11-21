@@ -1,18 +1,29 @@
 import 'package:sms_advanced/sms_advanced.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:dio/dio.dart';
+import 'dart:async';
 import '../api/slack_api.dart';
 
 class SmsMonitorService {
   static const String _keySlackWebhookUrl = 'slack_webhook_url';
   
   final SmsReceiver _smsReceiver = SmsReceiver();
+  StreamSubscription<SmsMessage>? _smsSubscription;
   
   // Start listening to SMS messages
   void startSmsMonitoring() {
-    _smsReceiver.onSmsReceived?.listen((SmsMessage message) {
+    // Cancel existing subscription to prevent duplicates
+    _smsSubscription?.cancel();
+    
+    _smsSubscription = _smsReceiver.onSmsReceived?.listen((SmsMessage message) {
       _handleSmsReceived(message);
     });
+  }
+  
+  // Stop listening to SMS messages
+  void stopSmsMonitoring() {
+    _smsSubscription?.cancel();
+    _smsSubscription = null;
   }
   
   // Handle received SMS
