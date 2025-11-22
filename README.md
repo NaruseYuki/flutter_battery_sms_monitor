@@ -26,7 +26,7 @@ A Flutter application that monitors battery levels at scheduled times and forwar
 
 - `battery_plus`: ^6.0.2 - Battery level monitoring
 - `android_alarm_manager_plus`: ^4.0.3 - Scheduled tasks
-- `sms_advanced`: ^1.1.0 - SMS reading
+- `readsms`: ^0.2.0+4 - SMS reading
 - `dio`: ^5.4.0 - HTTP client
 - `retrofit`: ^4.0.3 - Type-safe HTTP client
 - `permission_handler`: ^11.1.0 - Runtime permissions

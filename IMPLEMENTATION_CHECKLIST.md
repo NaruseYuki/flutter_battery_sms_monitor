@@ -13,7 +13,7 @@
 - [x] Proper alarm cancellation
 
 ### SMS Monitoring
-- [x] SMS reading using sms_advanced package
+- [x] SMS reading using readsms package
 - [x] Real-time SMS forwarding to Slack
 - [x] Automatic monitoring when configured
 - [x] SMS content includes sender, date, and message
@@ -133,7 +133,7 @@
 - [x] flutter SDK
 - [x] battery_plus: ^6.0.2
 - [x] android_alarm_manager_plus: ^4.0.3
-- [x] sms_advanced: ^1.1.0
+- [x] readsms: ^0.2.0+4
 - [x] dio: ^5.4.0
 - [x] retrofit: ^4.0.3
 - [x] json_annotation: ^4.8.1
@@ -207,7 +207,7 @@
 
 ### Original Requirements (Japanese)
 1. ✅ SMS読みとりとその後の処理 (SMS reading and processing)
-   - Implemented with sms_advanced package
+   - Implemented with readsms package
    - Automatic forwarding to Slack
 
 2. ✅ バッテリー監視 (Battery monitoring)

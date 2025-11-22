@@ -199,7 +199,7 @@ MIT License - see [LICENSE](LICENSE) file
 Built with Flutter and uses these excellent packages:
 - battery_plus
 - android_alarm_manager_plus
-- sms_advanced
+- readsms
 - retrofit
 - dio
 - shared_preferences

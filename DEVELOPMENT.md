@@ -77,7 +77,7 @@ Required Android permissions (AndroidManifest.xml):
 
 - **battery_plus**: Cross-platform battery level monitoring
 - **android_alarm_manager_plus**: Reliable background task scheduling
-- **sms_advanced**: SMS reading on Android
+- **readsms**: SMS reading on Android
 - **dio**: HTTP client (required by Retrofit)
 - **retrofit**: Type-safe REST client
 - **permission_handler**: Runtime permission requests
