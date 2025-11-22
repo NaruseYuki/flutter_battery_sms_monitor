@@ -66,7 +66,7 @@ Message: ${message.body ?? '(empty)'}
   Future<List<SmsMessage>> getRecentMessages({int count = 10}) async {
     final query = SmsQuery();
     final messages = await query.querySms(
-      kinds: [SmsQueryKind.inbox],
+      kinds: [SmsQueryKind.Inbox],
       count: count,
     );
     return messages;

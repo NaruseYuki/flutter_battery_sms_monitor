@@ -23,8 +23,8 @@ if (flutterVersionName == null) {
 }
 
 android {
-    namespace "com.example.flutter_battery_sms_monitor"
-    compileSdk 34
+    namespace "yuki.naruse.flutterbatterysmsmonitor"
+    compileSdk 35
     ndkVersion "25.1.8937393"
 
     compileOptions {
@@ -41,9 +41,9 @@ android {
     }
 
     defaultConfig {
-        applicationId "com.example.flutter_battery_sms_monitor"
-        minSdkVersion 21
-        targetSdkVersion 34
+        applicationId "yuki.naruse.flutterbatterysmsmonitor"
+        minSdkVersion 30
+        targetSdkVersion 35
         versionCode flutterVersionCode.toInteger()
         versionName flutterVersionName
     }
