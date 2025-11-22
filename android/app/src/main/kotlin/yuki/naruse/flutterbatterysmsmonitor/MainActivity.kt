@@ -1,4 +1,4 @@
-package com.example.flutter_battery_sms_monitor
+package yuki.naruse.flutterbatterysmsmonitor
 
 import io.flutter.embedding.android.FlutterActivity
 

@@ -7,7 +7,7 @@ import '../api/slack_api.dart';
 class SmsMonitorService {
   static const String _keySlackWebhookUrl = 'slack_webhook_url';
   
-  final ReadSms _readSms = ReadSms();
+  final Readsms _readSms = Readsms();
   StreamSubscription<SMS>? _smsSubscription;
   
   // Start listening to SMS messages
