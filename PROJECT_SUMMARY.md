@@ -16,7 +16,7 @@ Flutter Battery & SMS Monitor is a mobile application designed for Android that 
 - **Retrofit**: Type-safe HTTP client for Slack API
 - **Android Alarm Manager Plus**: Reliable background task scheduling
 - **Battery Plus**: Battery level monitoring
-- **SMS Advanced**: SMS reading capabilities
+- **ReadSMS**: SMS reading capabilities
 
 ## Project Structure
 

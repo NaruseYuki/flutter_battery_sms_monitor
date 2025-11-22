@@ -52,7 +52,7 @@ class SmsMonitorService {
       final text = '''
 📱 New SMS Received
 From: ${message.sender ?? 'Unknown'}
-Date: ${message.timeReceived ?? DateTime.now()}
+Date: ${message.timeReceived ?? DateTime.now()} ${message.timeReceived == null ? '(received time)' : ''}
 Message: ${message.body ?? '(empty)'}
       ''';
       
