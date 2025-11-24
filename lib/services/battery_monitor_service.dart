@@ -21,7 +21,7 @@ Future<void> batteryCheckCallback() async {
   final webhookUrl = settings['slackWebhookUrl'] as String;
 
   // バッテリーチェックとアラート送信
-  if (batteryLevel <= threshold) {
+  if (batteryLevel < threshold) {
     await service.sendBatteryAlert(batteryLevel, webhookUrl);
   }
 
