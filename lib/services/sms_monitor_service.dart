@@ -8,17 +8,25 @@ class SmsMonitorService {
 
   final Telephony _telephony = Telephony.instance;
 
-  // Flag to track if we are currently monitoring
+  // Flag to track if we are currently monitoring and should process SMS
   bool _isMonitoring = false;
+
+  // Flag to track if the listener has been registered
+  // (another_telephony's listenIncomingSms returns void and cannot be cancelled)
+  bool _listenerRegistered = false;
 
   // Start listening to SMS messages
   Future<void> startSmsMonitoring() async {
-    // If we are already monitoring, nothing to do.
-    if (_isMonitoring) {
+    _isMonitoring = true;
+
+    // Only register the listener once since another_telephony doesn't support
+    // unregistering listeners. The _isMonitoring flag controls whether
+    // received messages are actually processed.
+    if (_listenerRegistered) {
       return;
     }
 
-    _isMonitoring = true;
+    _listenerRegistered = true;
 
     _telephony.listenIncomingSms(
       onNewMessage: (SmsMessage message) {
@@ -30,8 +38,8 @@ class SmsMonitorService {
 
   // Stop listening to SMS messages
   Future<void> stopSmsMonitoring() async {
-    // another_telephony does not have a stop/dispose API for the listener.
-    // We set _isMonitoring to false to prevent restarting until requested.
+    // Note: another_telephony does not provide an API to unregister the listener.
+    // Setting _isMonitoring to false prevents processing of incoming SMS messages.
     _isMonitoring = false;
   }
 
@@ -42,6 +50,11 @@ class SmsMonitorService {
 
   // Handle received SMS
   Future<void> _handleSmsReceived(SmsMessage message) async {
+    // Skip processing if monitoring is disabled
+    if (!_isMonitoring) {
+      return;
+    }
+
     final prefs = await SharedPreferences.getInstance();
     final webhookUrl = prefs.getString(_keySlackWebhookUrl);
 
