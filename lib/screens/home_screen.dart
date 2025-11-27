@@ -91,7 +91,7 @@ class _HomeScreenState extends State<HomeScreen> {
     );
     
     await _batteryService.scheduleBatteryCheck(time);
-    _smsService.startSmsMonitoring();
+    await _smsService.startSmsMonitoring();
     
     setState(() {
       _isMonitoring = true;
@@ -205,7 +205,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 border: OutlineInputBorder(),
                 hintText: '09:00',
               ),
-              keyboardType: TextInputType.datetime,
+              keyboardType: TextInputType.text,
             ),
             
             const SizedBox(height: 16),

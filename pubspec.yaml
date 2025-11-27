@@ -17,7 +17,7 @@ dependencies:
   android_alarm_manager_plus: ^4.0.3
   
   # SMS reading
-  readsms: ^0.2.0+4
+  another_telephony: ^0.2.1
   
   # HTTP communication with Retrofit
   dio: ^5.4.0
