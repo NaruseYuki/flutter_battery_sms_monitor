@@ -1,4 +1,5 @@
 import 'package:another_telephony/telephony.dart';
+import 'package:flutter_battery_sms_monitor/main.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:dio/dio.dart';
 import '../api/slack_api.dart';
@@ -27,19 +28,20 @@ class SmsMonitorService {
     }
 
     _listenerRegistered = true;
-
-    _telephony.listenIncomingSms(
-      onNewMessage: (SmsMessage message) {
-        _handleSmsReceived(message);
-      },
-      listenInBackground: false,
-    );
+    final bool? result = await _telephony.requestPhoneAndSmsPermissions;
+    if (result != null && result) {
+      _telephony.listenIncomingSms(
+          onNewMessage: (SmsMessage message) async {
+            await _handleSmsReceived(message);
+          },
+          listenInBackground: true,
+          onBackgroundMessage: backgroundMessageHandler
+      );
+    }
   }
 
   // Stop listening to SMS messages
   Future<void> stopSmsMonitoring() async {
-    // Note: another_telephony does not provide an API to unregister the listener.
-    // Setting _isMonitoring to false prevents processing of incoming SMS messages.
     _isMonitoring = false;
   }
 
@@ -87,8 +89,6 @@ Message: ${message.body ?? '(empty)'}
       final slackMessage = SlackMessage(text: text);
       await api.postMessage(slackMessage);
     } catch (e) {
-      // Log error - in production, consider using a proper logging framework
-      // ignore: avoid_print
       print('Failed to send SMS to Slack: $e');
     }
   }

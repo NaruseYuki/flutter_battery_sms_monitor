@@ -30,6 +30,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "4.0.8"
+  another_telephony:
+    dependency: "direct main"
+    description:
+      name: another_telephony
+      sha256: b615b355bd26d89c14b5f21feb0f93a3991b9990882323cd36ba6d59d5414ff7
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.2.8"
   args:
     dependency: transitive
     description:
@@ -589,14 +597,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.5.0"
-  readsms:
-    dependency: "direct main"
-    description:
-      name: readsms
-      sha256: "77139c6d8a8e31e1012b79a5038b1423caecf6129ead3de803924fb6ff4e98ee"
-      url: "https://pub.dev"
-    source: hosted
-    version: "0.2.0+4"
   retrofit:
     dependency: "direct main"
     description:
