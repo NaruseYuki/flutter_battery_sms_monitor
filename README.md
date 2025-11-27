@@ -10,10 +10,12 @@ A Flutter application that monitors battery levels at scheduled times and forwar
 - Displays sender, date, and message content
 
 ### 2. Battery Monitoring
-- Schedule daily battery level checks at a specific time
-- Set custom battery threshold for alerts
-- Sends alert to Slack when battery level falls below threshold
+- Schedule daily battery level reports at a specific time
+- Set custom battery threshold for low battery alerts
+- **Real-time monitoring**: Sends alert to Slack immediately when battery falls below threshold (regardless of time)
+- **Scheduled reports**: Sends current battery level to Slack at the scheduled time (regardless of threshold)
 - Uses Android Alarm Manager for reliable scheduling
+- Uses system_state package for battery monitoring
 
 ### 3. User Interface
 - Configure Slack webhook URL
@@ -24,9 +26,9 @@ A Flutter application that monitors battery levels at scheduled times and forwar
 
 ## Dependencies
 
-- `battery_plus`: ^6.0.2 - Battery level monitoring
+- `system_state`: Battery level monitoring (from GitHub)
 - `android_alarm_manager_plus`: ^4.0.3 - Scheduled tasks
-- `readsms`: ^0.2.0+4 - SMS reading
+- `another_telephony`: ^0.2.1 - SMS reading
 - `dio`: ^5.4.0 - HTTP client
 - `retrofit`: ^4.0.3 - Type-safe HTTP client
 - `permission_handler`: ^11.1.0 - Runtime permissions
@@ -70,9 +72,11 @@ The app will request:
 ## Usage
 
 ### Battery Monitoring
-- The app will check battery level at the configured time daily
-- If battery level < threshold, an alert is sent to Slack
+- The app performs real-time monitoring and sends low battery alerts immediately
+- When battery level falls below threshold, an alert is sent to Slack immediately
 - Alert format: "⚠️ Battery Alert: Battery level is low at XX%"
+- At the configured time, the current battery level is reported to Slack
+- Scheduled report format: "🔋 Scheduled Battery Report\nTime: HH:MM\nBattery Level: XX%"
 
 ### SMS Monitoring
 - SMS monitoring starts automatically when settings are saved
