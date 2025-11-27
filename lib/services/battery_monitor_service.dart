@@ -44,6 +44,11 @@ class BatteryMonitorService {
 
   StreamSubscription<BatteryState>? _batterySubscription;
   bool _isMonitoringRealtime = false;
+  
+  // Cached alert state to reduce SharedPreferences I/O
+  bool? _cachedAlertSent;
+  // Flag to prevent concurrent processing of battery state changes
+  bool _isProcessingBatteryChange = false;
 
   // External instantiation
   BatteryMonitorService();
@@ -83,34 +88,51 @@ class BatteryMonitorService {
 
   // Start real-time battery monitoring
   // Sends Slack alert immediately when battery falls below threshold (regardless of time)
-  Future<void> startRealtimeBatteryMonitoring() async {
-    if (_isMonitoringRealtime) return;
+  // Returns true if monitoring started successfully, false otherwise
+  Future<bool> startRealtimeBatteryMonitoring() async {
+    if (_isMonitoringRealtime) return true;
 
     final settings = await getSettings();
-    if (settings == null) return;
+    if (settings == null) return false;
 
     final threshold = settings['batteryThreshold'] as int;
     final webhookUrl = settings['slackWebhookUrl'] as String;
+
+    // Initialize cached alert state from SharedPreferences
+    final prefs = await SharedPreferences.getInstance();
+    _cachedAlertSent = prefs.getBool(_keyLowBatteryAlertSent) ?? false;
 
     _isMonitoringRealtime = true;
 
     // Listen to battery state changes
     _batterySubscription = SystemState.battery.listen((batteryState) async {
-      final batteryLevel = batteryState.level;
-      final prefs = await SharedPreferences.getInstance();
-      final alertSent = prefs.getBool(_keyLowBatteryAlertSent) ?? false;
+      // Prevent concurrent processing of rapid battery state changes
+      if (_isProcessingBatteryChange) return;
+      _isProcessingBatteryChange = true;
 
-      // Send alert immediately when battery falls below threshold (regardless of time)
-      if (batteryLevel < threshold && !alertSent) {
-        await sendBatteryAlert(batteryLevel, webhookUrl);
-        await prefs.setBool(_keyLowBatteryAlertSent, true);
-        // ignore: avoid_print
-        print('Low battery alert sent. Level: $batteryLevel%');
-      } else if (batteryLevel >= threshold && alertSent) {
-        // Reset alert flag when battery level recovers above threshold
-        await prefs.setBool(_keyLowBatteryAlertSent, false);
+      try {
+        final batteryLevel = batteryState.level;
+
+        // Send alert immediately when battery falls below threshold (regardless of time)
+        if (batteryLevel < threshold && !(_cachedAlertSent ?? false)) {
+          await sendBatteryAlert(batteryLevel, webhookUrl);
+          _cachedAlertSent = true;
+          final prefs = await SharedPreferences.getInstance();
+          await prefs.setBool(_keyLowBatteryAlertSent, true);
+          // ignore: avoid_print
+          print('Low battery alert sent. Level: $batteryLevel%');
+        } else if (batteryLevel >= threshold && (_cachedAlertSent ?? false)) {
+          // Reset alert flag when battery level recovers above threshold
+          _cachedAlertSent = false;
+          final prefs = await SharedPreferences.getInstance();
+          await prefs.setBool(_keyLowBatteryAlertSent, false);
+        }
+      } finally {
+        _isProcessingBatteryChange = false;
       }
     });
+
+    return true;
   }
 
   // Stop real-time battery monitoring
@@ -118,6 +140,8 @@ class BatteryMonitorService {
     _batterySubscription?.cancel();
     _batterySubscription = null;
     _isMonitoringRealtime = false;
+    _cachedAlertSent = null;
+    _isProcessingBatteryChange = false;
   }
 
   // Schedule battery monitoring (one-shot)
