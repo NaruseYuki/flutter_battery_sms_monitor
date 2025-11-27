@@ -1,12 +1,14 @@
-import 'package:battery_plus/battery_plus.dart';
+import 'dart:async';
+import 'package:system_state/system_state.dart';
 import 'package:android_alarm_manager_plus/android_alarm_manager_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:dio/dio.dart';
 import '../api/slack_api.dart';
 
+// Scheduled time callback - sends current battery level to Slack (regardless of threshold)
 @pragma('vm:entry-point')
 Future<void> batteryCheckCallback() async {
-  final service = BatteryMonitorService.internal(); // 内部コンストラクタでインスタンス化
+  final service = BatteryMonitorService.internal();
   final settings = await service.getSettings();
 
   if (settings == null) {
@@ -15,21 +17,20 @@ Future<void> batteryCheckCallback() async {
     return;
   }
 
-  final battery = Battery();
-  final batteryLevel = await battery.batteryLevel;
-  final threshold = settings['batteryThreshold'] as int;
   final webhookUrl = settings['slackWebhookUrl'] as String;
 
-  // バッテリーチェックとアラート送信
-  if (batteryLevel < threshold) {
-    await service.sendBatteryAlert(batteryLevel, webhookUrl);
-  }
+  // Get current battery level using system_state
+  final batteryState = await SystemState.battery.getBattery();
+  final batteryLevel = batteryState.level;
 
-  // 💡 1回実行した後に、翌日の同じ時刻に再スケジュールしたい場合は、
-  service.scheduleBatteryCheck(settings['monitorTime']) ;
+  // At scheduled time, always send current battery level to Slack (regardless of threshold)
+  await service.sendScheduledBatteryReport(batteryLevel, webhookUrl);
+
+  // Reschedule for the next day
+  await service.scheduleBatteryCheck(settings['monitorTime']);
 
   // ignore: avoid_print
-  print('Battery check completed. Level: $batteryLevel%.');
+  print('Scheduled battery report completed. Level: $batteryLevel%.');
 }
 
 // ----------------------------------------------------------------------
@@ -38,14 +39,16 @@ class BatteryMonitorService {
   static const String _keyMonitorTime = 'monitor_time';
   static const String _keyBatteryThreshold = 'battery_threshold';
   static const String _keySlackWebhookUrl = 'slack_webhook_url';
+  static const String _keyLowBatteryAlertSent = 'low_battery_alert_sent';
   static const int _batteryAlarmId = 0;
 
-  final Battery _battery = Battery();
+  StreamSubscription<BatteryState>? _batterySubscription;
+  bool _isMonitoringRealtime = false;
 
-  // 外部からのインスタンス化
+  // External instantiation
   BatteryMonitorService();
 
-  // コールバック関数から利用するための内部コンストラクタ（_batteryは利用しない）
+  // Internal constructor for callback functions (does not use _battery)
   BatteryMonitorService.internal();
 
   // Save monitoring settings
@@ -78,8 +81,47 @@ class BatteryMonitorService {
     };
   }
 
-  // 🚨 修正されたメソッド: 一度だけバッテリーチェックをスケジュールします
+  // Start real-time battery monitoring
+  // Sends Slack alert immediately when battery falls below threshold (regardless of time)
+  Future<void> startRealtimeBatteryMonitoring() async {
+    if (_isMonitoringRealtime) return;
+
+    final settings = await getSettings();
+    if (settings == null) return;
+
+    final threshold = settings['batteryThreshold'] as int;
+    final webhookUrl = settings['slackWebhookUrl'] as String;
+
+    _isMonitoringRealtime = true;
+
+    // Listen to battery state changes
+    _batterySubscription = SystemState.battery.listen((batteryState) async {
+      final batteryLevel = batteryState.level;
+      final prefs = await SharedPreferences.getInstance();
+      final alertSent = prefs.getBool(_keyLowBatteryAlertSent) ?? false;
+
+      // Send alert immediately when battery falls below threshold (regardless of time)
+      if (batteryLevel < threshold && !alertSent) {
+        await sendBatteryAlert(batteryLevel, webhookUrl);
+        await prefs.setBool(_keyLowBatteryAlertSent, true);
+        // ignore: avoid_print
+        print('Low battery alert sent. Level: $batteryLevel%');
+      } else if (batteryLevel >= threshold && alertSent) {
+        // Reset alert flag when battery level recovers above threshold
+        await prefs.setBool(_keyLowBatteryAlertSent, false);
+      }
+    });
+  }
+
+  // Stop real-time battery monitoring
+  void stopRealtimeBatteryMonitoring() {
+    _batterySubscription?.cancel();
+    _batterySubscription = null;
+    _isMonitoringRealtime = false;
+  }
+
   // Schedule battery monitoring (one-shot)
+  // At scheduled time, sends current battery level to Slack (regardless of threshold)
   Future<void> scheduleBatteryCheck(String timeStr) async {
     // Parse time string (HH:MM)
     final parts = timeStr.split(':');
@@ -90,23 +132,20 @@ class BatteryMonitorService {
 
     if (hour == null || minute == null) return;
 
-    // 現在時刻を取得
     final now = DateTime.now();
-
-    // 指定された時刻で今日の日付のDateTimeオブジェクトを作成
     var scheduledTime = DateTime(now.year, now.month, now.day, hour, minute);
 
-    // スケジュール時刻が現在時刻よりも過去の場合、翌日の時刻に設定
+    // If scheduled time is in the past, schedule for the next day
     if (scheduledTime.isBefore(now)) {
       scheduledTime = scheduledTime.add(const Duration(days: 1));
     }
 
-    // 既存のアラームをキャンセル
+    // Cancel existing alarm
     await AndroidAlarmManager.cancel(_batteryAlarmId);
 
-    // oneShot で一度だけ実行するようスケジュール
+    // Schedule one-shot alarm
     await AndroidAlarmManager.oneShot(
-      scheduledTime.difference(now), // 現在から実行時刻までのDuration
+      scheduledTime.difference(now),
       _batteryAlarmId,
       batteryCheckCallback,
       exact: true,
@@ -121,9 +160,10 @@ class BatteryMonitorService {
   // Cancel battery monitoring
   Future<void> cancelBatteryCheck() async {
     await AndroidAlarmManager.cancel(_batteryAlarmId);
+    stopRealtimeBatteryMonitoring();
   }
 
-  // Send battery alert to Slack
+  // Send low battery alert to Slack (when battery falls below threshold)
   Future<void> sendBatteryAlert(int batteryLevel, String webhookUrl) async {
     try {
       final dio = Dio();
@@ -140,8 +180,27 @@ class BatteryMonitorService {
     }
   }
 
+  // Send scheduled battery report to Slack (at scheduled time, regardless of threshold)
+  Future<void> sendScheduledBatteryReport(int batteryLevel, String webhookUrl) async {
+    try {
+      final dio = Dio();
+      final api = SlackApi(dio, baseUrl: webhookUrl);
+      
+      final now = DateTime.now();
+      final message = SlackMessage(
+        text: '🔋 Scheduled Battery Report\nTime: ${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}\nBattery Level: $batteryLevel%',
+      );
+
+      await api.postMessage(message);
+    } catch (e) {
+      // ignore: avoid_print
+      print('Failed to send scheduled battery report: $e');
+    }
+  }
+
   // Get current battery level
   Future<int> getCurrentBatteryLevel() async {
-    return await _battery.batteryLevel;
+    final batteryState = await SystemState.battery.getBattery();
+    return batteryState.level;
   }
 }
