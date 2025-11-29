@@ -18,7 +18,12 @@ void onBootCompleted() async {
       return;
     }
 
-    final monitorTime = settings['monitorTime'] as String;
+    final monitorTime = settings['monitorTime'] as String?;
+    if (monitorTime == null || monitorTime.isEmpty) {
+      // ignore: avoid_print
+      print('Invalid monitor time setting on boot');
+      return;
+    }
 
     // Reschedule battery check alarm
     await batteryService.scheduleBatteryCheck(monitorTime);
