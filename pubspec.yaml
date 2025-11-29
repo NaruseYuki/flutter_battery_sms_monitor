@@ -10,8 +10,11 @@ dependencies:
   flutter:
     sdk: flutter
   
-  # Battery monitoring
-  battery_plus: ^6.0.2
+  # Battery monitoring (system_state from GitHub)
+  system_state:
+    git:
+      url: https://github.com/ShamilPP/system_state.git
+      ref: 466137ccc2ca2d68357ce061c2d53e01e9135bb2
   
   # Alarm manager for scheduled tasks
   android_alarm_manager_plus: ^4.0.3

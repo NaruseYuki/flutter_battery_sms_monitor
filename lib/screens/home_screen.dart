@@ -43,6 +43,8 @@ class _HomeScreenState extends State<HomeScreen> {
         _thresholdController.text = settings['batteryThreshold']?.toString() ?? '';
         _isMonitoring = true;
       });
+      // Start realtime battery monitoring when settings are restored
+      await _batteryService.startRealtimeBatteryMonitoring();
     }
   }
   
@@ -91,6 +93,7 @@ class _HomeScreenState extends State<HomeScreen> {
     );
     
     await _batteryService.scheduleBatteryCheck(time);
+    await _batteryService.startRealtimeBatteryMonitoring();
     await _smsService.startSmsMonitoring();
     
     setState(() {
@@ -266,8 +269,8 @@ class _HomeScreenState extends State<HomeScreen> {
                       style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                     ),
                     SizedBox(height: 8),
-                    Text('• Battery level will be checked at the specified time daily'),
-                    Text('• Alert will be sent if battery level is below the threshold'),
+                    Text('• Battery level will be reported to Slack at the specified time daily'),
+                    Text('• Alert will be sent immediately when battery falls below threshold'),
                     Text('• SMS messages will be automatically forwarded to Slack'),
                     Text('• Make sure to grant SMS and alarm permissions'),
                   ],
@@ -282,6 +285,7 @@ class _HomeScreenState extends State<HomeScreen> {
   
   @override
   void dispose() {
+    _batteryService.stopRealtimeBatteryMonitoring();
     _smsService.stopSmsMonitoring();
     _webhookController.dispose();
     _timeController.dispose();
