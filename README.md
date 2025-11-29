@@ -33,6 +33,7 @@ A Flutter application that monitors battery levels at scheduled times and forwar
 - `retrofit`: ^4.0.3 - Type-safe HTTP client
 - `permission_handler`: ^11.1.0 - Runtime permissions
 - `shared_preferences`: ^2.2.2 - Local storage
+- `flutter_boot_receiver`: ^1.3.0 - Restart monitoring on device reboot
 
 ## Setup
 
@@ -92,6 +93,7 @@ The app will request:
 
 - Battery monitoring uses Android Alarm Manager for reliable scheduling
 - Alarms persist after device reboot
+- **Boot Receiver**: The app automatically restarts monitoring (SMS, battery threshold, and scheduled reports) when the device reboots using `flutter_boot_receiver`
 - HTTP communication uses Retrofit for type-safe API calls
 - Settings are stored locally using SharedPreferences
 

@@ -5,6 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:dio/dio.dart';
 import 'screens/home_screen.dart';
 import 'api/slack_api.dart';
+import 'services/boot_receiver_service.dart';
 
 @pragma('vm:entry-point')
 backgroundMessageHandler(SmsMessage message) async {
@@ -47,6 +48,9 @@ void main() async {
 
   // Initialize Android Alarm Manager
   await AndroidAlarmManager.initialize();
+
+  // Initialize Boot Receiver to restart monitoring after device reboot
+  await BootReceiverService.initialize();
 
   runApp(const MyApp());
 }
