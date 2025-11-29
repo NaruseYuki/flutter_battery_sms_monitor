@@ -33,6 +33,9 @@ dependencies:
   # Permission handling
   permission_handler: ^11.1.0
   
+  # Boot receiver for restart monitoring after device reboot
+  flutter_boot_receiver: ^1.3.0
+  
   cupertino_icons: ^1.0.2
 
 dev_dependencies:
