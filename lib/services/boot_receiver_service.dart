@@ -1,5 +1,46 @@
+import 'package:another_telephony/telephony.dart';
 import 'package:flutter_boot_receiver/flutter_boot_receiver.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:dio/dio.dart';
+import '../api/slack_api.dart';
 import 'battery_monitor_service.dart';
+
+// Background SMS handler for boot receiver - same logic as main.dart backgroundMessageHandler
+@pragma('vm:entry-point')
+Future<void> _bootBackgroundSmsHandler(SmsMessage message) async {
+  const String keySlackWebhookUrl = 'slack_webhook_url';
+
+  try {
+    final prefs = await SharedPreferences.getInstance();
+    final webhookUrl = prefs.getString(keySlackWebhookUrl);
+
+    if (webhookUrl == null || webhookUrl.isEmpty) {
+      // ignore: avoid_print
+      print('Slack webhook URL not configured');
+      return;
+    }
+
+    final dio = Dio();
+    final api = SlackApi(dio, baseUrl: webhookUrl);
+
+    final receivedDate = message.date != null
+        ? DateTime.fromMillisecondsSinceEpoch(message.date!)
+        : DateTime.now();
+
+    final text = '''
+📱 New SMS Received (Background - Boot)
+From: ${message.address ?? 'Unknown'}
+Date: $receivedDate${message.date == null ? ' (received time)' : ''}
+Message: ${message.body ?? '(empty)'}
+    ''';
+
+    final slackMessage = SlackMessage(text: text);
+    await api.postMessage(slackMessage);
+  } catch (e) {
+    // ignore: avoid_print
+    print('Failed to send SMS to Slack from boot background: $e');
+  }
+}
 
 // Boot completed callback - called when the device boots up
 // Restarts SMS monitoring, battery threshold monitoring, and scheduled battery reports
@@ -30,12 +71,26 @@ void onBootCompleted() async {
     // ignore: avoid_print
     print('Scheduled battery check restarted after boot');
 
-    // Note: SMS monitoring and realtime battery monitoring require
-    // the app to be running in foreground/background with Flutter engine.
-    // They will be restarted when the app is launched.
-    // The scheduled alarm (battery check) is the main feature that
-    // needs to be restarted on boot since it uses AndroidAlarmManager
-    // which persists alarms across reboots.
+    // Start SMS monitoring on boot
+    // The another_telephony package supports background listening
+    final telephony = Telephony.instance;
+    
+    // Request permissions before starting SMS monitoring
+    final bool? hasPermission = await telephony.requestPhoneAndSmsPermissions;
+    if (hasPermission == true) {
+      telephony.listenIncomingSms(
+        onNewMessage: (SmsMessage message) async {
+          await _bootBackgroundSmsHandler(message);
+        },
+        listenInBackground: true,
+        onBackgroundMessage: _bootBackgroundSmsHandler,
+      );
+      // ignore: avoid_print
+      print('SMS monitoring restarted after boot');
+    } else {
+      // ignore: avoid_print
+      print('SMS permissions not granted on boot');
+    }
 
     // ignore: avoid_print
     print('Boot completed callback finished successfully');
